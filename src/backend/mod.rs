@@ -1,0 +1,32 @@
+use crate::displays::DisplayInfo;
+use crate::plan::Playback;
+use crate::scale::ScaleMode;
+
+#[derive(Debug, Clone, Copy)]
+pub struct RunOptions {
+    pub pause: PauseMode,
+    pub scale: ScaleMode,
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub enum PauseMode {
+    #[default]
+    Never,
+    OnBattery,
+    BelowPercent(u8),
+}
+
+pub trait Backend {
+    /// Enumerate displays this backend can target. Cheap, does not start the runtime.
+    fn list_displays() -> anyhow::Result<Vec<DisplayInfo>>;
+
+    /// Take ownership of the runtime. Blocks for the lifetime of the wallpaper —
+    /// returns only on error or graceful shutdown.
+    fn run(self, playback: Playback, options: RunOptions) -> anyhow::Result<()>;
+}
+
+#[cfg(target_os = "linux")]
+pub mod wayland;
+
+#[cfg(target_os = "macos")]
+pub mod macos;
